@@ -1,6 +1,7 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import { autoUpdater } from 'electron-updater'
 import { IPC_CHANNELS } from '../shared/constants'
 import { ensureStorageDirs, getDbPath } from './services/paths'
 import { openDatabase } from './services/db'
@@ -65,6 +66,12 @@ app.whenReady().then(() => {
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
+
+  if (!is.dev) {
+    autoUpdater.checkForUpdatesAndNotify().catch((err) => {
+      console.error('[autoUpdater] check failed:', err)
+    })
+  }
 })
 
 app.on('window-all-closed', () => {

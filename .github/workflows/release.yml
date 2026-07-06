@@ -1,0 +1,46 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build and publish Windows release
+        run: npm run release:win
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Notify Discord
+        if: success()
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        shell: pwsh
+        run: |
+          if ([string]::IsNullOrEmpty($env:DISCORD_WEBHOOK_URL)) {
+            Write-Host "DISCORD_WEBHOOK_URL secret is not set, skipping Discord notification."
+            exit 0
+          }
+          $tag = "${{ github.ref_name }}"
+          $repo = "${{ github.repository }}"
+          $body = @{
+            content = "🎉 Anasoko段位道場ジェネレーター $tag をリリースしました！`nhttps://github.com/$repo/releases/tag/$tag"
+          } | ConvertTo-Json
+          Invoke-RestMethod -Uri $env:DISCORD_WEBHOOK_URL -Method Post -Body $body -ContentType 'application/json'

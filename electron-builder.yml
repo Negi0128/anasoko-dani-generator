@@ -1,0 +1,29 @@
+appId: com.anasoko.dani-generator
+productName: Anasoko段位道場ジェネレーター
+directories:
+  buildResources: build
+  output: release
+files:
+  - '!**/.vscode/*'
+  - '!src/*'
+  - '!electron.vite.config.{js,ts,mjs,cjs}'
+  - '!{.eslintrc.cjs,vitest.config.ts,README.md}'
+  - '!{.env,.env.*,.npmrc}'
+  - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+  - '!reference{,/**}'
+asarUnpack:
+  - '**/*.node'
+win:
+  executableName: anasoko-dani-generator
+  target:
+    - target: nsis
+      arch: [x64]
+nsis:
+  artifactName: ${name}-${version}-setup.${ext}
+  shortcutName: ${productName}
+  uninstallDisplayName: ${productName}
+  createDesktopShortcut: always
+publish:
+  provider: github
+  owner: Negi0128
+  repo: anasoko-dani-generator
