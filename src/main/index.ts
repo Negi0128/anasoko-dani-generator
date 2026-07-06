@@ -1,7 +1,8 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import { autoUpdater } from 'electron-updater'
+import electronUpdaterPkg from 'electron-updater'
+const { autoUpdater } = electronUpdaterPkg
 import { IPC_CHANNELS } from '../shared/constants'
 import { ensureStorageDirs, getDbPath } from './services/paths'
 import { openDatabase } from './services/db'
