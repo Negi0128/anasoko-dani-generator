@@ -1,0 +1,23 @@
+export const IPC_CHANNELS = {
+  ping: 'app:ping',
+  settingsGet: 'settings:get',
+  settingsUpdate: 'settings:update',
+  songLibraryList: 'songLibrary:list',
+  songLibraryImportFiles: 'songLibrary:importFiles',
+  songLibraryRemove: 'songLibrary:remove',
+  dialogsPickTjaFile: 'dialogs:pickTjaFile',
+  setsList: 'sets:list',
+  setsCreate: 'sets:create',
+  setsLoad: 'sets:load',
+  setsSave: 'sets:save',
+  setsDelete: 'sets:delete',
+  setsDuplicate: 'sets:duplicate',
+  setsExportToFolder: 'sets:exportToFolder',
+  setsExportToZip: 'sets:exportToZip',
+  dialogsPickSaveFolder: 'dialogs:pickSaveFolder',
+  dialogsPickSaveZip: 'dialogs:pickSaveZip',
+  dialogsPickImportFolder: 'dialogs:pickImportFolder',
+  dialogsPickImportZip: 'dialogs:pickImportZip',
+  setsImportFromFolder: 'sets:importFromFolder',
+  setsImportFromZip: 'sets:importFromZip'
+} as const

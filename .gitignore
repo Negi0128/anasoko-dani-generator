@@ -1,0 +1,16 @@
+node_modules
+.cache
+out
+dist
+dist-electron
+release
+.DS_Store
+*.log
+.env
+
+# Contains copyrighted song audio (.ogg) used only as local reference/test
+# fixtures - must not be published to the public repo.
+/reference/
+
+# Editor/session-local, not project source
+.claude/

@@ -1,0 +1,43 @@
+﻿{
+  "title": "",
+  "tja_Path": [
+    "fumen\\はいよろこんで.tja",
+    "fumen\\シカ色デイズ.tja",
+    "fumen\\ライラック.tja"
+  ],
+  "tja_Diff": [
+    1,
+    1,
+    1
+  ],
+  "tja_Genre": [
+    "ポップス",
+    "アニメ",
+    "アニメ"
+  ],
+  "tja_Hidden": [
+    false,
+    false,
+    false
+  ],
+  "theme_Genre": [
+    "HitCount"
+  ],
+  "theme_Continuous": [
+    true
+  ],
+  "theme_Gauge": {
+    "red": 92.0,
+    "gold": 100.0
+  },
+  "theme_Borders": [
+    {
+      "values": [
+        {
+          "red": 642,
+          "gold": 664
+        }
+      ]
+    }
+  ]
+}

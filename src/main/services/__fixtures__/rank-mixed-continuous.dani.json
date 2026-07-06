@@ -1,0 +1,71 @@
+﻿{
+  "title": "",
+  "tja_Path": [
+    "fumen\\My Muscle Heart.tja",
+    "fumen\\Crystal Hail.tja",
+    "fumen\\仮想現実のテレスコープ.tja"
+  ],
+  "tja_Diff": [
+    3,
+    3,
+    3
+  ],
+  "tja_Genre": [
+    "ナムコオリジナル",
+    "ゲームミュージック",
+    "ナムコオリジナル"
+  ],
+  "tja_Hidden": [
+    false,
+    false,
+    false
+  ],
+  "theme_Genre": [
+    "Good",
+    "Miss",
+    "Roll"
+  ],
+  "theme_Continuous": [
+    true,
+    true,
+    false
+  ],
+  "theme_Gauge": {
+    "red": 100.0,
+    "gold": 100.0
+  },
+  "theme_Borders": [
+    {
+      "values": [
+        {
+          "red": 210,
+          "gold": 164
+        }
+      ]
+    },
+    {
+      "values": [
+        {
+          "red": 12,
+          "gold": 6
+        }
+      ]
+    },
+    {
+      "values": [
+        {
+          "red": 119,
+          "gold": 138
+        },
+        {
+          "red": 134,
+          "gold": 146
+        },
+        {
+          "red": 257,
+          "gold": 272
+        }
+      ]
+    }
+  ]
+}
