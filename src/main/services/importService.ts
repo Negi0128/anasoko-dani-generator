@@ -7,7 +7,7 @@ import type { ImportReport } from '../../shared/types/importReport'
 import { readDaniDef } from './daniDefCodec'
 import { parseRankFolderName, readDaniJson, toInternalRank } from './daniJsonCodec'
 import { createSet, saveSet } from './setService'
-import { importSong, listSongs } from './songLibraryService'
+import { assignSongFile } from './songAssetService'
 import { extractZipToFolder } from './zipCodec'
 
 const RANK_FOLDER_PATTERN = /^\d+,.+$/
@@ -43,8 +43,7 @@ export function importSetFromFolder(
     .sort((a, b) => parseRankFolderName(a.name).rankIndex - parseRankFolderName(b.name).rankIndex)
 
   const warnings: string[] = []
-  let songsAdded = 0
-  let songsDeduped = 0
+  let songsImported = 0
   const ranks: Rank[] = []
 
   for (const folder of rankFolders) {
@@ -58,19 +57,16 @@ export function importSetFromFolder(
     const raw = readDaniJson(readFileSync(daniJsonPath))
     const rank = toInternalRank(raw, folder.name)
 
-    const songIds = raw.tja_Path.map((relTjaPath) => {
+    const assets = raw.tja_Path.map((relTjaPath) => {
       const tjaAbsPath = join(rankDir, relTjaPath)
       if (!existsSync(tjaAbsPath)) {
         warnings.push(`${folder.name}: 譜面ファイルが見つかりません (${relTjaPath})`)
         return null
       }
-      const beforeCount = listSongs(db).length
       try {
-        const song = importSong(db, songsDir, tjaAbsPath)
-        const afterCount = listSongs(db).length
-        if (afterCount > beforeCount) songsAdded++
-        else songsDeduped++
-        return song.id
+        const asset = assignSongFile(songsDir, tjaAbsPath)
+        songsImported++
+        return asset
       } catch (e) {
         warnings.push(
           `${folder.name}: 曲の取り込みに失敗しました (${relTjaPath}) - ${
@@ -83,7 +79,16 @@ export function importSetFromFolder(
 
     ranks.push({
       ...rank,
-      songSlots: rank.songSlots.map((slot, i) => ({ ...slot, songId: songIds[i] ?? null }))
+      songSlots: rank.songSlots.map((slot, i) => {
+        const asset = assets[i]
+        return {
+          ...slot,
+          tjaRelPath: asset?.tjaRelPath ?? null,
+          oggRelPath: asset?.oggRelPath ?? null,
+          songTitle: asset?.songTitle ?? null,
+          courses: asset?.courses ?? []
+        }
+      })
     })
   }
 
@@ -92,8 +97,7 @@ export function importSetFromFolder(
   return {
     setId: created.id,
     ranksImported: ranks.length,
-    songsAdded,
-    songsDeduped,
+    songsImported,
     warnings
   }
 }

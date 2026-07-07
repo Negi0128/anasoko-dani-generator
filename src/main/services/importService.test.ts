@@ -7,7 +7,6 @@ import { openDatabase } from './db'
 import { writeDaniDef } from './daniDefCodec'
 import { importSetFromFolder, importSetFromZip } from './importService'
 import { loadSet } from './setService'
-import { listSongs } from './songLibraryService'
 
 function writeMinimalSet(rootDir: string): void {
   writeFileSync(join(rootDir, 'dani.def'), writeDaniDef({ title: 'テストセット', index: 0 }))
@@ -62,14 +61,13 @@ describe('importSetFromFolder', () => {
 
     const report = importSetFromFolder(db, songsDir, sourceDir)
     expect(report.ranksImported).toBe(1)
-    expect(report.songsAdded).toBe(1)
+    expect(report.songsImported).toBe(1)
     expect(report.warnings).toEqual([])
 
     const set = loadSet(db, report.setId)
     expect(set?.title).toBe('テストセット')
     expect(set?.ranks[0].rankName).toBe('五級')
-    expect(set?.ranks[0].songSlots[0].songId).not.toBeNull()
-    expect(listSongs(db)).toHaveLength(1)
+    expect(set?.ranks[0].songSlots[0].tjaRelPath).not.toBeNull()
   })
 
   it('reports a warning and skips a rank when dani.json is missing', () => {
@@ -109,13 +107,13 @@ describe('importSetFromZip (real reference sample)', () => {
     // 18 ranks exist in the sample (indices 0-17); tolerate the one known
     // malformed folder-name entry in the real archive being skipped.
     expect(report.ranksImported).toBeGreaterThanOrEqual(15)
-    expect(report.songsAdded).toBeGreaterThan(0)
+    expect(report.songsImported).toBeGreaterThan(0)
 
     const set = loadSet(db, report.setId)
     expect(set?.title).toBe('2025本家段位')
 
     const rank0 = set?.ranks.find((r) => r.rankIndex === 0)
     expect(rank0?.rankName).toBe('五級')
-    expect(rank0?.songSlots.every((s) => s.songId !== null)).toBe(true)
+    expect(rank0?.songSlots.every((s) => s.tjaRelPath !== null)).toBe(true)
   }, 60000)
 })

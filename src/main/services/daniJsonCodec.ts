@@ -108,10 +108,14 @@ export function toInternalRank(raw: RawDaniJson, folderName: string): Rank {
 
   const songSlots: SongSlot[] = raw.tja_Path.map((_, i) => ({
     id: randomUUID(),
-    songId: null,
+    tjaRelPath: null,
+    oggRelPath: null,
+    songTitle: null,
+    courses: [],
     diff: raw.tja_Diff[i],
     songGenreLabel: raw.tja_Genre[i],
-    hidden: raw.tja_Hidden[i]
+    hidden: raw.tja_Hidden[i],
+    analysisBranch: null
   }))
 
   const statKinds: StatKind[] = raw.theme_Genre.map((label, i) => {

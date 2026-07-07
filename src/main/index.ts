@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, dialog, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import electronUpdaterPkg from 'electron-updater'
@@ -8,18 +8,40 @@ import { ensureStorageDirs, getDbPath } from './services/paths'
 import { openDatabase } from './services/db'
 import { registerIpc } from './ipc'
 
+let hasUnsavedChanges = false
+
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
     show: false,
     autoHideMenuBar: true,
+    icon: join(__dirname, '../../build/icon.png'),
     webPreferences: {
       preload: join(__dirname, '../preload/index.mjs'),
       sandbox: false,
       contextIsolation: true,
       nodeIntegration: false
     }
+  })
+
+  mainWindow.on('close', (event) => {
+    if (!hasUnsavedChanges) return
+    event.preventDefault()
+    dialog
+      .showMessageBox(mainWindow, {
+        type: 'warning',
+        buttons: ['保存せず終了', 'キャンセル'],
+        defaultId: 1,
+        cancelId: 1,
+        message: '保存されていない変更があります。終了しますか?'
+      })
+      .then(({ response }) => {
+        if (response === 0) {
+          hasUnsavedChanges = false
+          mainWindow.destroy()
+        }
+      })
   })
 
   mainWindow.on('ready-to-show', () => {
@@ -57,6 +79,9 @@ app.whenReady().then(() => {
   })
 
   ipcMain.handle(IPC_CHANNELS.ping, () => 'pong')
+  ipcMain.on(IPC_CHANNELS.appSetDirty, (_event, isDirty: boolean) => {
+    hasUnsavedChanges = isDirty
+  })
 
   ensureStorageDirs()
   const db = openDatabase(getDbPath())

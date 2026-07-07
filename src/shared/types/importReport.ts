@@ -1,7 +1,6 @@
 export interface ImportReport {
   setId: string
   ranksImported: number
-  songsAdded: number
-  songsDeduped: number
+  songsImported: number
   warnings: string[]
 }

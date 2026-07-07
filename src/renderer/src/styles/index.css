@@ -18,6 +18,13 @@ body {
   color: #ff5f6d;
 }
 
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 button {
   font-size: 1em;
   padding: 8px 16px;
@@ -103,6 +110,44 @@ select option {
 .song-picker-list {
   list-style: none;
   padding: 0;
+}
+
+.template-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.template-picker-row button:first-child {
+  flex: 1;
+  text-align: left;
+}
+
+.confirm-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.export-overwrite-modal {
+  max-width: 800px;
+}
+
+.export-conflict-compare {
+  display: flex;
+  gap: 20px;
+}
+
+.export-conflict-compare > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.export-conflict-rank-detail {
+  font-size: 0.85em;
+  opacity: 0.75;
+  margin: 4px 0 10px;
 }
 
 /* ---- Set library screen ---- */
@@ -250,9 +295,113 @@ select option {
   background: rgba(255, 255, 255, 0.06);
   border-radius: 8px;
   padding: 10px 12px;
+  flex-wrap: wrap;
+}
+
+.analysis-section {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.analysis-section-title {
+  margin: 0 0 12px;
+  font-size: 1em;
+  opacity: 0.85;
+}
+
+.analysis-section-body {
+  display: flex;
+  gap: 24px;
+  align-items: stretch;
+  flex-wrap: wrap;
+}
+
+.analysis-table {
+  border-collapse: collapse;
+}
+
+.analysis-table th {
+  text-align: center;
+  opacity: 0.6;
+  font-weight: normal;
+  font-size: 0.85em;
+  padding: 4px 10px;
+}
+
+.analysis-table td {
+  text-align: center;
+  padding: 6px 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.formula-connector {
+  text-align: center;
+  padding-left: 2px !important;
+  padding-right: 2px !important;
+}
+
+.formula-connector.formula-plus {
+  font-size: 0.75em;
+  opacity: 0.45;
+}
+
+.formula-connector.formula-eq {
+  font-size: 1.1em;
+  font-weight: bold;
+  opacity: 0.9;
+}
+
+.analysis-formula {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+  font-size: 1.05em;
+}
+
+.analysis-formula-guide {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+  font-size: 0.75em;
+  opacity: 0.6;
+  margin-bottom: 4px;
+}
+
+.song-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.song-name-text {
+  font-family: 'DFPKanTeiRyu-XB', 'Segoe UI', 'Hiragino Sans', 'Yu Gothic', sans-serif;
+  font-size: 1.15em;
+}
+
+.branch-warning {
+  font-size: 0.75em;
+  color: #ffcc33;
+  border: 1px solid rgba(255, 204, 51, 0.5);
+  border-radius: 4px;
+  padding: 1px 6px;
+  white-space: nowrap;
+}
+
+.branch-select {
+  font-size: 0.85em;
+  padding: 2px 6px;
 }
 
 .order-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  line-height: 1;
   border-radius: 999px;
   padding: 4px 10px;
   font-weight: bold;
@@ -275,8 +424,9 @@ select option {
   background: none;
   border: none;
   color: inherit;
-  font-size: 1em;
+  font-size: 1.25em;
   cursor: pointer;
+  font-family: 'DFPKanTeiRyu-XB', 'Segoe UI', 'Hiragino Sans', 'Yu Gothic', sans-serif;
 }
 
 .course-select {
@@ -313,6 +463,7 @@ select option {
 }
 
 .rank-badge-name {
+  font-family: 'DFPKanTeiRyu-XB', 'Segoe UI', 'Hiragino Sans', 'Yu Gothic', sans-serif;
   font-size: 1.6em;
   font-weight: bold;
 }
@@ -322,10 +473,113 @@ select option {
   font-size: 0.85em;
 }
 
+/* 五級~一級: 木材/肌色 */
+.rank-badge.tier-wood {
+  background: linear-gradient(160deg, #d9b98c, #a9825a);
+  border-color: #8a6a3f;
+}
+.rank-badge.tier-wood .rank-badge-name,
+.rank-badge.tier-wood .rank-badge-index {
+  color: #3a2a15;
+}
+
+/* 初段~五段: 青 */
+.rank-badge.tier-blue {
+  background: linear-gradient(160deg, #3d76b8, #1f4569);
+  border-color: #8fc1ff;
+}
+.rank-badge.tier-blue .rank-badge-name,
+.rank-badge.tier-blue .rank-badge-index {
+  color: #ffffff;
+}
+
+/* 六段~十段: 赤 */
+.rank-badge.tier-red {
+  background: linear-gradient(160deg, #c14b41, #7a2a23);
+  border-color: #ffab9f;
+}
+.rank-badge.tier-red .rank-badge-name,
+.rank-badge.tier-red .rank-badge-index {
+  color: #ffffff;
+}
+
+/* 玄人~超人: 銀 */
+.rank-badge.tier-silver {
+  background: linear-gradient(160deg, #d4d9dd, #9aa1a8);
+  border-color: #ffffff;
+}
+.rank-badge.tier-silver .rank-badge-name,
+.rank-badge.tier-silver .rank-badge-index {
+  color: #20242a;
+}
+
+/* 達人: 金 */
+.rank-badge.tier-gold {
+  background: linear-gradient(160deg, #f0cb52, #b8901f);
+  border-color: #fff2c2;
+}
+.rank-badge.tier-gold .rank-badge-name,
+.rank-badge.tier-gold .rank-badge-index {
+  color: #3a2a05;
+}
+
+/* 外伝: 緑 */
+.rank-badge.tier-gaiden {
+  background: linear-gradient(160deg, #4caf6e, #276b3f);
+  border-color: #9be8b3;
+}
+.rank-badge.tier-gaiden .rank-badge-name,
+.rank-badge.tier-gaiden .rank-badge-index {
+  color: #ffffff;
+}
+
 .rank-manage-buttons {
   display: flex;
   flex-direction: row;
   gap: 10px;
+}
+
+.rank-analysis-total {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 16px 24px;
+  text-align: center;
+  font-size: 1em;
+  opacity: 0.85;
+  min-width: 320px;
+  white-space: nowrap;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.rank-analysis-total-title {
+  font-weight: bold;
+  margin-bottom: 4px;
+  opacity: 1;
+}
+
+.analysis-apply-panel {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 16px 24px;
+  font-size: 1em;
+  min-width: 320px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.analysis-apply-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.analysis-apply-row button {
+  font-size: 0.85em;
+  padding: 4px 10px;
 }
 
 .gauge-inline {
@@ -360,6 +614,20 @@ select option {
 .border-mode-button.gold {
   background: #ffcc33;
   color: #2a2a2a;
+}
+
+select.add-board-select {
+  background: #3fae6a;
+  border-color: #3fae6a;
+  color: white;
+  font-weight: bold;
+}
+
+select.condition-preset-select {
+  background: #6f7fe0;
+  border-color: #6f7fe0;
+  color: white;
+  font-weight: bold;
 }
 
 .boards-column {
@@ -408,6 +676,32 @@ select option {
   font-size: 0.85em;
   min-width: 48px;
   text-align: center;
+}
+
+.settings-screen {
+  padding: 16px 24px 32px;
+}
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 640px;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.settings-folder-value {
+  flex: 1;
+  overflow-wrap: anywhere;
+  opacity: 0.75;
+  font-size: 0.9em;
+  text-align: right;
 }
 
 .add-first-rank {

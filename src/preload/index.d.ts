@@ -1,19 +1,23 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
 import type { DaniSet, DaniSetSummary } from '../shared/types/daniSet'
 import type { AppSettings } from '../shared/types/settings'
-import type { RemoveSongResult, Song } from '../shared/types/song'
+import type { SongAssetResult, SongCourse } from '../shared/types/song'
 import type { ImportReport } from '../shared/types/importReport'
+import type { ValidationReport } from '../shared/types/validationReport'
+import type { ExportFolderConflict } from '../shared/types/exportConflict'
 
 interface Api {
   ping: () => Promise<string>
+  app: {
+    setDirty: (isDirty: boolean) => void
+  }
   settings: {
     get: () => Promise<AppSettings>
     update: (patch: Partial<AppSettings>) => Promise<AppSettings>
   }
-  songLibrary: {
-    list: () => Promise<Song[]>
-    importFiles: (tjaPath: string) => Promise<Song>
-    remove: (id: string, force?: boolean) => Promise<RemoveSongResult>
+  songAssets: {
+    assign: (tjaPath: string) => Promise<SongAssetResult>
+    analyze: (tjaRelPath: string) => Promise<SongCourse[]>
   }
   dialogs: {
     pickTjaFile: () => Promise<string | null>
@@ -21,6 +25,7 @@ interface Api {
     pickSaveZip: (defaultName: string) => Promise<string | null>
     pickImportFolder: () => Promise<string | null>
     pickImportZip: () => Promise<string | null>
+    pickFolder: (title: string) => Promise<string | null>
   }
   sets: {
     list: () => Promise<DaniSetSummary[]>
@@ -29,10 +34,16 @@ interface Api {
     save: (set: DaniSet) => Promise<DaniSet | null>
     remove: (id: string) => Promise<void>
     duplicate: (id: string, newTitle: string) => Promise<DaniSet | null>
-    exportToFolder: (id: string, destDir: string) => Promise<{ ranksExported: number }>
+    exportToFolder: (
+      id: string,
+      destDir: string,
+      overwriteFolderName?: string
+    ) => Promise<{ ranksExported: number }>
+    checkExportFolderConflict: (id: string, destDir: string) => Promise<ExportFolderConflict | null>
     exportToZip: (id: string, destZipPath: string) => Promise<{ ranksExported: number }>
     importFromFolder: (sourceDir: string) => Promise<ImportReport>
     importFromZip: (sourceZipPath: string) => Promise<ImportReport>
+    validate: (id: string) => Promise<ValidationReport>
   }
 }
 

@@ -11,8 +11,6 @@ describe('openDatabase', () => {
 
     expect(tables).toEqual(
       expect.arrayContaining([
-        'songs',
-        'song_courses',
         'dani_sets',
         'ranks',
         'stat_kinds',
@@ -20,6 +18,7 @@ describe('openDatabase', () => {
         'song_slots'
       ])
     )
+    expect(tables).not.toEqual(expect.arrayContaining(['songs', 'song_courses', 'templates']))
     db.close()
   })
 

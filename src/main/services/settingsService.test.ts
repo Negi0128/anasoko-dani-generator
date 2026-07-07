@@ -23,8 +23,9 @@ describe('settingsService', () => {
   })
 
   it('persists a full write and reads it back', () => {
-    writeSettings(settingsPath, { audioPreviewEnabled: false, defaultExportFormat: 'zip' })
+    writeSettings(settingsPath, { ...DEFAULT_SETTINGS, audioPreviewEnabled: false, defaultExportFormat: 'zip' })
     expect(readSettings(settingsPath)).toEqual({
+      ...DEFAULT_SETTINGS,
       audioPreviewEnabled: false,
       defaultExportFormat: 'zip'
     })
@@ -33,7 +34,7 @@ describe('settingsService', () => {
   it('merges a partial patch onto existing settings', () => {
     writeSettings(settingsPath, DEFAULT_SETTINGS)
     const updated = updateSettings(settingsPath, { audioPreviewEnabled: false })
-    expect(updated).toEqual({ audioPreviewEnabled: false, defaultExportFormat: 'folder' })
+    expect(updated).toEqual({ ...DEFAULT_SETTINGS, audioPreviewEnabled: false })
     expect(readSettings(settingsPath)).toEqual(updated)
   })
 })

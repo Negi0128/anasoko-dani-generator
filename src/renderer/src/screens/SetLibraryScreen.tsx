@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { DaniSetSummary } from '../../../shared/types/daniSet'
+import type { ValidationReport } from '../../../shared/types/validationReport'
+import type { ExportFolderConflict } from '../../../shared/types/exportConflict'
+import ExportValidationModal from '../components/ExportValidationModal'
+import ExportOverwriteModal from '../components/ExportOverwriteModal'
+import PromptDialog from '../components/PromptDialog'
 
 interface SetLibraryScreenProps {
   onOpenSet: (setId: string) => void
@@ -9,6 +14,13 @@ function SetLibraryScreen({ onOpenSet }: SetLibraryScreenProps): JSX.Element {
   const [sets, setSets] = useState<DaniSetSummary[]>([])
   const [newTitle, setNewTitle] = useState('')
   const [exportError, setExportError] = useState<string | null>(null)
+  const [validationReport, setValidationReport] = useState<ValidationReport | null>(null)
+  const [duplicateTarget, setDuplicateTarget] = useState<{ id: string; currentTitle: string } | null>(null)
+  const [exportConflict, setExportConflict] = useState<{
+    id: string
+    conflict: ExportFolderConflict
+    destDir: string
+  } | null>(null)
 
   const refresh = useCallback(() => {
     window.api.sets.list().then(setSets)
@@ -28,10 +40,14 @@ function SetLibraryScreen({ onOpenSet }: SetLibraryScreenProps): JSX.Element {
     onOpenSet(created.id)
   }
 
-  const handleDuplicate = async (id: string, currentTitle: string): Promise<void> => {
-    const newTitle = window.prompt('複製後のタイトル', `${currentTitle} のコピー`)
-    if (!newTitle) return
-    await window.api.sets.duplicate(id, newTitle)
+  const handleDuplicate = (id: string, currentTitle: string): void => {
+    setDuplicateTarget({ id, currentTitle })
+  }
+
+  const handleDuplicateConfirm = async (title: string): Promise<void> => {
+    if (!duplicateTarget) return
+    setDuplicateTarget(null)
+    await window.api.sets.duplicate(duplicateTarget.id, title)
     refresh()
   }
 
@@ -44,10 +60,37 @@ function SetLibraryScreen({ onOpenSet }: SetLibraryScreenProps): JSX.Element {
   const handleExportFolder = async (id: string): Promise<void> => {
     setExportError(null)
     try {
-      const destDir = await window.api.dialogs.pickSaveFolder()
+      const report = await window.api.sets.validate(id)
+      if (!report.isValid) {
+        setValidationReport(report)
+        return
+      }
+      const settings = await window.api.settings.get()
+      const destDir = settings.defaultDaniFolder ?? (await window.api.dialogs.pickSaveFolder())
       if (!destDir) return
-      const report = await window.api.sets.exportToFolder(id, destDir)
-      window.alert(`エクスポート完了: ${report.ranksExported}段位を書き出しました`)
+      const conflict = await window.api.sets.checkExportFolderConflict(id, destDir)
+      if (conflict) {
+        setExportConflict({ id, conflict, destDir })
+        return
+      }
+      const exportReport = await window.api.sets.exportToFolder(id, destDir)
+      window.alert(`エクスポート完了: ${exportReport.ranksExported}段位を書き出しました`)
+    } catch (e) {
+      setExportError(e instanceof Error ? e.message : String(e))
+    }
+  }
+
+  const resolveExportConflict = async (mode: 'overwrite' | 'new'): Promise<void> => {
+    if (!exportConflict) return
+    const { id, conflict, destDir } = exportConflict
+    setExportConflict(null)
+    try {
+      const exportReport = await window.api.sets.exportToFolder(
+        id,
+        destDir,
+        mode === 'overwrite' ? conflict.folderName : undefined
+      )
+      window.alert(`エクスポート完了: ${exportReport.ranksExported}段位を書き出しました`)
     } catch (e) {
       setExportError(e instanceof Error ? e.message : String(e))
     }
@@ -56,10 +99,15 @@ function SetLibraryScreen({ onOpenSet }: SetLibraryScreenProps): JSX.Element {
   const handleExportZip = async (id: string, title: string): Promise<void> => {
     setExportError(null)
     try {
+      const report = await window.api.sets.validate(id)
+      if (!report.isValid) {
+        setValidationReport(report)
+        return
+      }
       const destZip = await window.api.dialogs.pickSaveZip(title)
       if (!destZip) return
-      const report = await window.api.sets.exportToZip(id, destZip)
-      window.alert(`エクスポート完了: ${report.ranksExported}段位を書き出しました`)
+      const exportReport = await window.api.sets.exportToZip(id, destZip)
+      window.alert(`エクスポート完了: ${exportReport.ranksExported}段位を書き出しました`)
     } catch (e) {
       setExportError(e instanceof Error ? e.message : String(e))
     }
@@ -67,13 +115,12 @@ function SetLibraryScreen({ onOpenSet }: SetLibraryScreenProps): JSX.Element {
 
   const reportImportResult = (report: {
     ranksImported: number
-    songsAdded: number
-    songsDeduped: number
+    songsImported: number
     warnings: string[]
   }): void => {
     const lines = [
       `${report.ranksImported}段位をインポートしました`,
-      `新規登録曲: ${report.songsAdded} / 既存を再利用: ${report.songsDeduped}`
+      `取り込んだ曲: ${report.songsImported}`
     ]
     if (report.warnings.length > 0) {
       lines.push('', '警告:', ...report.warnings)
@@ -125,6 +172,28 @@ function SetLibraryScreen({ onOpenSet }: SetLibraryScreenProps): JSX.Element {
         <button onClick={handleImportFolder}>フォルダから読み込み</button>
         <button onClick={handleImportZip}>ZIPから読み込み</button>
       </div>
+
+      {validationReport && (
+        <ExportValidationModal report={validationReport} onClose={() => setValidationReport(null)} />
+      )}
+
+      {duplicateTarget && (
+        <PromptDialog
+          title="複製後のタイトル"
+          defaultValue={`${duplicateTarget.currentTitle} のコピー`}
+          onConfirm={handleDuplicateConfirm}
+          onCancel={() => setDuplicateTarget(null)}
+        />
+      )}
+
+      {exportConflict && (
+        <ExportOverwriteModal
+          conflict={exportConflict.conflict}
+          onOverwrite={() => resolveExportConflict('overwrite')}
+          onExportAsNew={() => resolveExportConflict('new')}
+          onCancel={() => setExportConflict(null)}
+        />
+      )}
 
       {exportError && <p className="error">{exportError}</p>}
 

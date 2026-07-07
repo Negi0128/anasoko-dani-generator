@@ -102,15 +102,18 @@ export function parseTja(buf: Buffer): TjaParseResult {
       hasBranches = true
       continue
     }
-    if (line.startsWith('#N')) {
+    // \b avoids matching directives like #MEASURE/#END here — #E alone
+    // would otherwise wrongly swallow #END (checked above, so harmless
+    // there) and #M would wrongly swallow #MEASURE (not checked elsewhere).
+    if (/^#N\b/.test(line)) {
       currentBranch = 'N'
       continue
     }
-    if (line.startsWith('#E')) {
+    if (/^#E\b/.test(line)) {
       currentBranch = 'E'
       continue
     }
-    if (line.startsWith('#M')) {
+    if (/^#M\b/.test(line)) {
       currentBranch = 'M'
       continue
     }

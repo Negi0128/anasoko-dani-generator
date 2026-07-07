@@ -1,6 +1,6 @@
 {
   "name": "anasoko-dani-generator",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Anasoko 段位道場セット ジェネレーター",
   "main": "./out/main/index.js",
   "author": "",

@@ -31,10 +31,6 @@ describe('setService', () => {
 
   it('saves and reloads a full rank tree, including mixed-continuity stat kinds', () => {
     const created = createSet(db, { title: 'Set', index: 0 })
-    db.prepare(
-      `INSERT INTO songs (id, title, content_hash, tja_stored_path, ogg_stored_path, tja_encoding, created_at, updated_at)
-       VALUES ('song-a', 'Song A', 'hash-a', 'songs/song-a/chart.tja', 'songs/song-a/audio.ogg', 'utf8', '', '')`
-    ).run()
 
     const set: DaniSet = {
       id: created.id,
@@ -49,8 +45,28 @@ describe('setService', () => {
           gauge: { red: 98, gold: 100 },
           statKinds: [{ label: 'HitCount', continuous: true, cumulativeBorder: { red: 825, gold: 874 } }],
           songSlots: [
-            { id: 'slot-0', songId: null, diff: 3, songGenreLabel: 'ナムコオリジナル', hidden: false },
-            { id: 'slot-1', songId: null, diff: 2, songGenreLabel: 'ナムコオリジナル', hidden: false }
+            {
+              id: 'slot-0',
+              tjaRelPath: null,
+              oggRelPath: null,
+              songTitle: null,
+              courses: [],
+              diff: 3,
+              songGenreLabel: 'ナムコオリジナル',
+              hidden: false,
+              analysisBranch: null
+            },
+            {
+              id: 'slot-1',
+              tjaRelPath: null,
+              oggRelPath: null,
+              songTitle: null,
+              courses: [],
+              diff: 2,
+              songGenreLabel: 'ナムコオリジナル',
+              hidden: false,
+              analysisBranch: null
+            }
           ]
         },
         {
@@ -72,8 +88,28 @@ describe('setService', () => {
             }
           ],
           songSlots: [
-            { id: 'slot-2', songId: 'song-a', diff: 3, songGenreLabel: 'J-POP', hidden: true },
-            { id: 'slot-3', songId: null, diff: 3, songGenreLabel: 'J-POP', hidden: false }
+            {
+              id: 'slot-2',
+              tjaRelPath: 'songs/song-a/chart.tja',
+              oggRelPath: 'songs/song-a/audio.ogg',
+              songTitle: 'Song A',
+              courses: [],
+              diff: 3,
+              songGenreLabel: 'J-POP',
+              hidden: true,
+              analysisBranch: null
+            },
+            {
+              id: 'slot-3',
+              tjaRelPath: null,
+              oggRelPath: null,
+              songTitle: null,
+              courses: [],
+              diff: 3,
+              songGenreLabel: 'J-POP',
+              hidden: false,
+              analysisBranch: null
+            }
           ]
         }
       ]
@@ -128,7 +164,19 @@ describe('setService', () => {
           title: '',
           gauge: { red: 98, gold: 100 },
           statKinds: [{ label: 'HitCount', continuous: true, cumulativeBorder: { red: 1, gold: 2 } }],
-          songSlots: [{ id: 'slot-0', songId: null, diff: 3, songGenreLabel: '', hidden: false }]
+          songSlots: [
+            {
+              id: 'slot-0',
+              tjaRelPath: null,
+              oggRelPath: null,
+              songTitle: null,
+              courses: [],
+              diff: 3,
+              songGenreLabel: '',
+              hidden: false,
+              analysisBranch: null
+            }
+          ]
         }
       ]
     })

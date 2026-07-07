@@ -3,7 +3,12 @@ import type Database from 'better-sqlite3'
 import { IPC_CHANNELS } from '../../shared/constants'
 import type { DaniSet } from '../../shared/types/daniSet'
 import { createSet, deleteSet, duplicateSet, listSets, loadSet, saveSet } from '../services/setService'
-import { exportSetToFolder, exportSetToZip } from '../services/exportService'
+import {
+  checkExportFolderConflict,
+  exportSetToFolder,
+  exportSetToZip,
+  validateSet
+} from '../services/exportService'
 import { importSetFromFolder, importSetFromZip } from '../services/importService'
 import { getSongsDir, getUserDataDir } from '../services/paths'
 
@@ -27,8 +32,14 @@ export function registerSetsIpc(db: Database.Database): void {
     duplicateSet(db, id, newTitle)
   )
 
-  ipcMain.handle(IPC_CHANNELS.setsExportToFolder, (_event, id: string, destDir: string) =>
-    exportSetToFolder(db, getUserDataDir(), id, destDir)
+  ipcMain.handle(
+    IPC_CHANNELS.setsExportToFolder,
+    (_event, id: string, destDir: string, overwriteFolderName?: string) =>
+      exportSetToFolder(db, getUserDataDir(), id, destDir, overwriteFolderName)
+  )
+
+  ipcMain.handle(IPC_CHANNELS.setsCheckExportFolderConflict, (_event, id: string, destDir: string) =>
+    checkExportFolderConflict(db, id, destDir)
   )
 
   ipcMain.handle(IPC_CHANNELS.setsExportToZip, (_event, id: string, destZipPath: string) =>
@@ -42,4 +53,10 @@ export function registerSetsIpc(db: Database.Database): void {
   ipcMain.handle(IPC_CHANNELS.setsImportFromZip, (_event, sourceZipPath: string) =>
     importSetFromZip(db, getSongsDir(), sourceZipPath)
   )
+
+  ipcMain.handle(IPC_CHANNELS.setsValidate, (_event, id: string) => {
+    const set = loadSet(db, id)
+    if (!set) throw new Error('指定されたセットが見つかりません')
+    return validateSet(set)
+  })
 }

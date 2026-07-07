@@ -23,3 +23,15 @@ export const STAT_KIND_PRESETS: readonly StatKindPreset[] = [
   { key: 'HitCount', label: '叩けた数', defaultContinuous: false, comparisonSuffix: '以上' },
   { key: 'MaxCombo', label: 'コンボ数', defaultContinuous: false, comparisonSuffix: '以上' }
 ]
+
+/** Multiplier applied to the red value to seed the gold value the first time
+ * a board's gold condition is viewed (while it's still at its default 0). */
+export const GOLD_AUTOFILL_MULTIPLIER: Record<string, number> = {
+  Great: 1.1,
+  Roll: 1.1,
+  MaxCombo: 1.1,
+  HitCount: 1.1,
+  Good: 2 / 3,
+  Miss: 2 / 3,
+  Score: 1
+}

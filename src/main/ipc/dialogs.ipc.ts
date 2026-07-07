@@ -1,10 +1,14 @@
 import { dialog, ipcMain } from 'electron'
 import { IPC_CHANNELS } from '../../shared/constants'
+import { getSettingsPath } from '../services/paths'
+import { readSettings } from '../services/settingsService'
 
 export function registerDialogsIpc(): void {
   ipcMain.handle(IPC_CHANNELS.dialogsPickTjaFile, async () => {
+    const settings = readSettings(getSettingsPath())
     const result = await dialog.showOpenDialog({
       title: '譜面ファイル(.tja)を選択(音源は同じフォルダのWAVE:指定を自動で使用します)',
+      defaultPath: settings.defaultSongFolder ?? undefined,
       filters: [{ name: 'TJA', extensions: ['tja'] }],
       properties: ['openFile']
     })
@@ -13,8 +17,19 @@ export function registerDialogsIpc(): void {
   })
 
   ipcMain.handle(IPC_CHANNELS.dialogsPickSaveFolder, async () => {
+    const settings = readSettings(getSettingsPath())
     const result = await dialog.showOpenDialog({
-      title: '出力先フォルダを選択',
+      title: '出力先の「Dani」フォルダを選択してください(この中に連番のフォルダが作成されます)',
+      defaultPath: settings.defaultDaniFolder ?? undefined,
+      properties: ['openDirectory', 'createDirectory']
+    })
+    if (result.canceled || result.filePaths.length === 0) return null
+    return result.filePaths[0]
+  })
+
+  ipcMain.handle(IPC_CHANNELS.dialogsPickFolder, async (_event, title: string) => {
+    const result = await dialog.showOpenDialog({
+      title,
       properties: ['openDirectory', 'createDirectory']
     })
     if (result.canceled || result.filePaths.length === 0) return null

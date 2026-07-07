@@ -1,3 +1,5 @@
+import type { SongCourse, TjaBranch } from './song'
+
 export interface BorderValue {
   red: number
   gold: number
@@ -14,10 +16,15 @@ export interface StatKind {
 
 export interface SongSlot {
   id: string
-  songId: string | null
+  tjaRelPath: string | null
+  oggRelPath: string | null
+  songTitle: string | null
+  courses: SongCourse[]
   diff: number
   songGenreLabel: string
   hidden: boolean
+  /** User-chosen branch to reference for analysis; null = use the course's own defaultBranch. */
+  analysisBranch: TjaBranch | null
 }
 
 export interface Rank {

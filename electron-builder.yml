@@ -15,14 +15,12 @@ asarUnpack:
   - '**/*.node'
 win:
   executableName: anasoko-dani-generator
+  icon: build/icon.ico
   target:
-    - target: nsis
+    - target: portable
       arch: [x64]
-nsis:
-  artifactName: ${name}-${version}-setup.${ext}
-  shortcutName: ${productName}
-  uninstallDisplayName: ${productName}
-  createDesktopShortcut: always
+portable:
+  artifactName: ${name}-${version}.${ext}
 publish:
   provider: github
   owner: Negi0128

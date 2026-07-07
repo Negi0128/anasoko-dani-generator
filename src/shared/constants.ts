@@ -1,10 +1,10 @@
 export const IPC_CHANNELS = {
   ping: 'app:ping',
+  appSetDirty: 'app:setDirty',
   settingsGet: 'settings:get',
   settingsUpdate: 'settings:update',
-  songLibraryList: 'songLibrary:list',
-  songLibraryImportFiles: 'songLibrary:importFiles',
-  songLibraryRemove: 'songLibrary:remove',
+  songAssetsAssign: 'songAssets:assign',
+  songAssetsAnalyze: 'songAssets:analyze',
   dialogsPickTjaFile: 'dialogs:pickTjaFile',
   setsList: 'sets:list',
   setsCreate: 'sets:create',
@@ -13,11 +13,14 @@ export const IPC_CHANNELS = {
   setsDelete: 'sets:delete',
   setsDuplicate: 'sets:duplicate',
   setsExportToFolder: 'sets:exportToFolder',
+  setsCheckExportFolderConflict: 'sets:checkExportFolderConflict',
   setsExportToZip: 'sets:exportToZip',
   dialogsPickSaveFolder: 'dialogs:pickSaveFolder',
   dialogsPickSaveZip: 'dialogs:pickSaveZip',
   dialogsPickImportFolder: 'dialogs:pickImportFolder',
   dialogsPickImportZip: 'dialogs:pickImportZip',
+  dialogsPickFolder: 'dialogs:pickFolder',
   setsImportFromFolder: 'sets:importFromFolder',
-  setsImportFromZip: 'sets:importFromZip'
+  setsImportFromZip: 'sets:importFromZip',
+  setsValidate: 'sets:validate'
 } as const

@@ -27,10 +27,14 @@ interface StatKindRow {
 
 interface SongSlotRow {
   id: string
-  song_id: string | null
+  tja_rel_path: string | null
+  ogg_rel_path: string | null
+  song_title: string | null
+  courses_json: string | null
   diff: number
   song_genre_label: string
   hidden: number
+  analysis_branch: string | null
 }
 
 export function listSets(db: Database.Database): DaniSetSummary[] {
@@ -99,10 +103,14 @@ export function loadSet(db: Database.Database, id: string): DaniSet | null {
 
     const songSlots: SongSlot[] = slotRows.map((s) => ({
       id: s.id,
-      songId: s.song_id,
+      tjaRelPath: s.tja_rel_path,
+      oggRelPath: s.ogg_rel_path,
+      songTitle: s.song_title,
+      courses: s.courses_json ? JSON.parse(s.courses_json) : [],
       diff: s.diff,
       songGenreLabel: s.song_genre_label,
-      hidden: !!s.hidden
+      hidden: !!s.hidden,
+      analysisBranch: (s.analysis_branch as SongSlot['analysisBranch']) ?? null
     }))
 
     return {
@@ -144,8 +152,8 @@ export function saveSet(db: Database.Database, set: DaniSet): void {
       `INSERT INTO stat_kind_per_song_borders (stat_kind_id, song_slot_index, red, gold) VALUES (?, ?, ?, ?)`
     )
     const insertSlot = db.prepare(
-      `INSERT INTO song_slots (id, rank_id, sort_order, song_id, diff, song_genre_label, hidden)
-       VALUES (@id, @rankId, @sortOrder, @songId, @diff, @songGenreLabel, @hidden)`
+      `INSERT INTO song_slots (id, rank_id, sort_order, tja_rel_path, ogg_rel_path, song_title, courses_json, diff, song_genre_label, hidden, analysis_branch)
+       VALUES (@id, @rankId, @sortOrder, @tjaRelPath, @oggRelPath, @songTitle, @coursesJson, @diff, @songGenreLabel, @hidden, @analysisBranch)`
     )
 
     set.ranks.forEach((rank, rankOrder) => {
@@ -183,10 +191,14 @@ export function saveSet(db: Database.Database, set: DaniSet): void {
           id: slot.id,
           rankId: rank.id,
           sortOrder: slotOrder,
-          songId: slot.songId,
+          tjaRelPath: slot.tjaRelPath,
+          oggRelPath: slot.oggRelPath,
+          songTitle: slot.songTitle,
+          coursesJson: slot.courses.length > 0 ? JSON.stringify(slot.courses) : null,
           diff: slot.diff,
           songGenreLabel: slot.songGenreLabel,
-          hidden: slot.hidden ? 1 : 0
+          hidden: slot.hidden ? 1 : 0,
+          analysisBranch: slot.analysisBranch
         })
       })
     })

@@ -17,6 +17,9 @@ const COURSE_NAME_TO_INDEX: Record<string, number> = {
 }
 
 export function courseNameToIndex(courseName: string): number | null {
-  const index = COURSE_NAME_TO_INDEX[courseName.trim().toLowerCase()]
+  const trimmed = courseName.trim()
+  // TJA spec also allows COURSE: to be a bare number (0-4), not just a name.
+  if (/^[0-4]$/.test(trimmed)) return Number(trimmed)
+  const index = COURSE_NAME_TO_INDEX[trimmed.toLowerCase()]
   return index === undefined ? null : index
 }
