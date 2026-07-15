@@ -31,6 +31,8 @@ export interface Rank {
   id: string
   rankIndex: number
   rankName: string
+  /** dani.json's title. Always mirrors rankName — it is derived, not edited
+   * independently, so the on-screen title always matches the rank panel. */
   title: string
   gauge: BorderValue
   statKinds: StatKind[]
@@ -41,6 +43,9 @@ export interface DaniSet {
   id: string
   title: string
   index: number
+  /** Absolute path of the folder this set was last exported to, or null if it
+   * has never been exported. Re-exporting overwrites this folder in place. */
+  lastExportPath: string | null
   ranks: Rank[]
 }
 

@@ -3,6 +3,7 @@ import initSql from '../store/migrations/001_init.sql?raw'
 import removeSongLibrarySql from '../store/migrations/002_remove_song_library.sql?raw'
 import dropTemplatesSql from '../store/migrations/004_drop_templates.sql?raw'
 import addAnalysisBranchSql from '../store/migrations/005_add_analysis_branch.sql?raw'
+import addLastExportPathSql from '../store/migrations/006_add_last_export_path.sql?raw'
 
 interface Migration {
   version: number
@@ -15,7 +16,8 @@ const MIGRATIONS: Migration[] = [
   { version: 1, sql: initSql },
   { version: 2, sql: removeSongLibrarySql },
   { version: 4, sql: dropTemplatesSql },
-  { version: 5, sql: addAnalysisBranchSql }
+  { version: 5, sql: addAnalysisBranchSql },
+  { version: 6, sql: addLastExportPathSql }
 ]
 
 export function openDatabase(dbPath: string): Database.Database {

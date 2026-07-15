@@ -4,10 +4,15 @@ import { join } from 'path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type Database from 'better-sqlite3'
 import { openDatabase } from './db'
-import { createSet, saveSet } from './setService'
+import { createSet, loadSet, saveSet } from './setService'
 import { readDaniDef } from './daniDefCodec'
 import { readDaniJson } from './daniJsonCodec'
-import { exportSetToFolder, exportSetToZip, validateSet } from './exportService'
+import {
+  checkExportFolderConflict,
+  exportSetToFolder,
+  exportSetToZip,
+  validateSet
+} from './exportService'
 import type { DaniSet } from '../../shared/types/daniSet'
 
 describe('exportService', () => {
@@ -36,23 +41,25 @@ describe('exportService', () => {
     }
   }
 
+  // Ids are namespaced by setId so two sets can coexist in the same DB.
   function buildTestSet(setId: string, title = 'テストセット'): DaniSet {
     return {
       id: setId,
       title,
       index: 0,
+      lastExportPath: null,
       ranks: [
         {
-          id: 'rank-0',
+          id: `${setId}-rank-0`,
           rankIndex: 0,
           rankName: '五級',
-          title: '',
+          title: '五級',
           gauge: { red: 98, gold: 100 },
           statKinds: [{ label: 'HitCount', continuous: true, cumulativeBorder: { red: 100, gold: 120 } }],
           songSlots: [
-            songSlot('slot-0', 'song-a', '曲A', 3),
-            songSlot('slot-1', 'song-b', '曲B', 3),
-            songSlot('slot-2', 'song-c', '曲C', 2)
+            songSlot(`${setId}-slot-0`, 'song-a', '曲A', 3),
+            songSlot(`${setId}-slot-1`, 'song-b', '曲B', 3),
+            songSlot(`${setId}-slot-2`, 'song-c', '曲C', 2)
           ]
         }
       ]
@@ -161,19 +168,70 @@ describe('exportService', () => {
     expect(readFileSync(join(rankDir, 'fumen', '曲A.tja'), 'utf-8')).toContain('TITLE:曲A')
   })
 
-  it('numbers repeated exports sequentially and fills gaps starting from 1', () => {
+  it('re-exporting the same set overwrites its remembered folder in place', () => {
+    const created = createSet(db, { title: 'テストセット', index: 0 })
+    saveSet(db, buildTestSet(created.id))
+
+    const first = exportSetToFolder(db, userDataDir, created.id, destDir)
+    expect(first.folderPath).toBe(join(destDir, '001-テストセット'))
+
+    const second = exportSetToFolder(db, userDataDir, created.id, destDir)
+    expect(second.folderPath).toBe(join(destDir, '001-テストセット'))
+    expect(existsSync(join(destDir, '002-テストセット'))).toBe(false)
+  })
+
+  it('remembers the exported folder on the set', () => {
+    const created = createSet(db, { title: 'テストセット', index: 0 })
+    saveSet(db, buildTestSet(created.id))
+
+    expect(loadSet(db, created.id)?.lastExportPath).toBeNull()
+    exportSetToFolder(db, userDataDir, created.id, destDir)
+    expect(loadSet(db, created.id)?.lastExportPath).toBe(join(destDir, '001-テストセット'))
+  })
+
+  it('exports afresh when the remembered folder was deleted outside the app', () => {
     const created = createSet(db, { title: 'テストセット', index: 0 })
     saveSet(db, buildTestSet(created.id))
 
     exportSetToFolder(db, userDataDir, created.id, destDir)
-    exportSetToFolder(db, userDataDir, created.id, destDir)
-    expect(existsSync(join(destDir, '001-テストセット'))).toBe(true)
-    expect(existsSync(join(destDir, '002-テストセット'))).toBe(true)
-
     rmSync(join(destDir, '001-テストセット'), { recursive: true, force: true })
-    exportSetToFolder(db, userDataDir, created.id, destDir)
+
+    // The remembered path is gone, so numbering restarts at the freed number.
+    const report = exportSetToFolder(db, userDataDir, created.id, destDir)
+    expect(report.folderPath).toBe(join(destDir, '001-テストセット'))
     expect(existsSync(join(destDir, '001-テストセット'))).toBe(true)
-    expect(existsSync(join(destDir, '003-テストセット'))).toBe(false)
+  })
+
+  it('gives each different set its own numbered folder', () => {
+    const a = createSet(db, { title: 'セットA', index: 0 })
+    saveSet(db, buildTestSet(a.id, 'セットA'))
+    const b = createSet(db, { title: 'セットB', index: 1 })
+    saveSet(db, buildTestSet(b.id, 'セットB'))
+
+    exportSetToFolder(db, userDataDir, a.id, destDir)
+    exportSetToFolder(db, userDataDir, b.id, destDir)
+
+    expect(existsSync(join(destDir, '001-セットA'))).toBe(true)
+    expect(existsSync(join(destDir, '002-セットB'))).toBe(true)
+  })
+
+  it('does not flag a conflict for the folder the set already owns', () => {
+    const created = createSet(db, { title: 'テストセット', index: 0 })
+    saveSet(db, buildTestSet(created.id))
+
+    exportSetToFolder(db, userDataDir, created.id, destDir)
+    expect(checkExportFolderConflict(db, created.id, destDir)).toBeNull()
+  })
+
+  it('flags a conflict for a same-titled folder this set did not export', () => {
+    const created = createSet(db, { title: 'テストセット', index: 0 })
+    saveSet(db, buildTestSet(created.id))
+
+    // A folder left behind by some other export of the same title.
+    mkdirSync(join(destDir, '001-テストセット'), { recursive: true })
+
+    const conflict = checkExportFolderConflict(db, created.id, destDir)
+    expect(conflict?.folderName).toBe('001-テストセット')
   })
 
   it('exports a complete set to a zip file with correctly named entries', async () => {

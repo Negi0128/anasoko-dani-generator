@@ -7,11 +7,14 @@ import type { SongAssetResult, SongCourse } from '../shared/types/song'
 import type { ImportReport } from '../shared/types/importReport'
 import type { ValidationReport } from '../shared/types/validationReport'
 import type { ExportFolderConflict } from '../shared/types/exportConflict'
+import type { ExportReport } from '../shared/types/exportReport'
 
 const api = {
   ping: (): Promise<string> => ipcRenderer.invoke(IPC_CHANNELS.ping),
   app: {
-    setDirty: (isDirty: boolean): void => ipcRenderer.send(IPC_CHANNELS.appSetDirty, isDirty)
+    setDirty: (isDirty: boolean): void => ipcRenderer.send(IPC_CHANNELS.appSetDirty, isDirty),
+    reportError: (context: string, message: string, detail: string): void =>
+      ipcRenderer.send(IPC_CHANNELS.appReportError, context, message, detail)
   },
   settings: {
     get: (): Promise<AppSettings> => ipcRenderer.invoke(IPC_CHANNELS.settingsGet),
@@ -50,11 +53,11 @@ const api = {
       id: string,
       destDir: string,
       overwriteFolderName?: string
-    ): Promise<{ ranksExported: number }> =>
+    ): Promise<ExportReport> =>
       ipcRenderer.invoke(IPC_CHANNELS.setsExportToFolder, id, destDir, overwriteFolderName),
     checkExportFolderConflict: (id: string, destDir: string): Promise<ExportFolderConflict | null> =>
       ipcRenderer.invoke(IPC_CHANNELS.setsCheckExportFolderConflict, id, destDir),
-    exportToZip: (id: string, destZipPath: string): Promise<{ ranksExported: number }> =>
+    exportToZip: (id: string, destZipPath: string): Promise<ExportReport> =>
       ipcRenderer.invoke(IPC_CHANNELS.setsExportToZip, id, destZipPath),
     importFromFolder: (sourceDir: string): Promise<ImportReport> =>
       ipcRenderer.invoke(IPC_CHANNELS.setsImportFromFolder, sourceDir),

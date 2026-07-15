@@ -6,6 +6,9 @@ export default defineConfig({
     // process exit after tests that exercise yauzl/zlib + better-sqlite3
     // together (large zip extraction). Forked child processes tear down
     // cleanly instead.
-    pool: 'forks'
+    pool: 'forks',
+    // .claude holds agent worktrees — full copies of this repo whose test
+    // files would otherwise be collected and run alongside the real ones.
+    exclude: ['**/node_modules/**', '**/dist/**', '**/out/**', '**/.claude/**']
   }
 })

@@ -3,6 +3,12 @@ import type { DaniSet, Rank, SongSlot, StatKind } from '../../../shared/types/da
 import type { SongAssetResult, SongCourse, SongCourseBranchAnalysis, TjaBranch } from '../../../shared/types/song'
 import { GAIDEN_START_INDEX, RANK_NAME_PRESETS } from '../../../shared/types/rankPresets'
 import { GOLD_AUTOFILL_MULTIPLIER, STAT_KIND_PRESETS } from '../../../shared/types/statKindPresets'
+import {
+  analysisBorderFor,
+  ANALYZABLE_STAT_LABELS,
+  type AnalysisBorder,
+  type RollBreakdown
+} from '../../../shared/types/analysisBorder'
 import { COURSE_LABELS, courseNameToIndex } from '../../../shared/types/coursePresets'
 import { CONDITION_PRESETS } from '../../../shared/types/conditionPresets'
 import type { ValidationReport } from '../../../shared/types/validationReport'
@@ -13,6 +19,7 @@ import {
   DEFAULT_SHORT_ROLL_COMP,
   type ShortRollComp
 } from '../../../shared/types/rollSpeed'
+import { reportError } from '../errorReporting'
 import NumberInput from '../components/NumberInput'
 import ConfirmDialog from '../components/ConfirmDialog'
 import PromptDialog from '../components/PromptDialog'
@@ -66,18 +73,7 @@ function slotHitCountTotal(slot: SongSlot, rollSpeed: number, comp: ShortRollCom
   return slotDonKatsuCount(slot) + slotRollHitsTotal(slot, rollSpeed, comp)
 }
 
-/** Stat kinds whose target counts can be estimated from a chart's own note data. */
-const ANALYZABLE_STAT_LABELS = new Set(['Roll', 'MaxCombo', 'HitCount'])
-
-interface SlotRollBreakdown {
-  donKatsu: number
-  /** 通常連打(風船以外)で打てる回数。 */
-  normalRoll: number
-  /** 風船だけの目安打数(BALLOON*ヘッダーの合計)。 */
-  balloon: number
-}
-
-function slotRollBreakdown(slot: SongSlot, rollSpeed: number, comp: ShortRollComp): SlotRollBreakdown {
+function slotRollBreakdown(slot: SongSlot, rollSpeed: number, comp: ShortRollComp): RollBreakdown {
   const analysis = branchAnalysisForSlot(slot)
   const normalRoll = analysis
     ? (analysis.rollDurations ?? []).reduce((sum, d) => sum + computeRollHits(d, rollSpeed, comp), 0)
@@ -85,52 +81,13 @@ function slotRollBreakdown(slot: SongSlot, rollSpeed: number, comp: ShortRollCom
   return { donKatsu: slotDonKatsuCount(slot), normalRoll, balloon: slotBalloonOnlyTotal(slot) }
 }
 
-/** 風船と通常連打を別計算にした条件値の目安。
- * 赤合格: 通常連打はそのまま、風船は取りこぼし余地を見て打数-1(0未満にはしない)。
- * 金合格: 通常連打に倍率を掛け、風船はそのまま加算(取りこぼし猶予なし)。
- * 連打数自体には理論上の上限がある指標ではない(倍率で満数を超えて要求してよい)ため、
- * ここではクランプしない。 */
-function analysisRollValue(b: SlotRollBreakdown, mode: BorderMode, multiplier: number): number {
-  if (mode === 'red') {
-    return b.normalRoll + Math.max(b.balloon - 1, 0)
-  }
-  return Math.round(b.normalRoll * multiplier) + b.balloon
-}
-
-/** たたけた数の条件値の目安。連打部分は analysisRollValue と同じ考え方で、
- * 音符打数にも金合格時のみ倍率を掛ける。理論値(音符数+連打の満数)を超えないようにする。 */
-function analysisHitCountValue(b: SlotRollBreakdown, mode: BorderMode, multiplier: number): number {
-  const theoreticalMax = b.donKatsu + b.normalRoll + b.balloon
-  if (mode === 'red') {
-    const balloonPart = Math.max(b.balloon - 1, 0)
-    return Math.min(b.donKatsu + b.normalRoll + balloonPart, theoreticalMax)
-  }
-  const gold = Math.round(b.donKatsu * multiplier) + Math.round(b.normalRoll * multiplier) + b.balloon
-  return Math.min(gold, theoreticalMax)
-}
-
-/** コンボ数の条件値の目安。コンボは連打(風船含む)を叩いてもリセットされないだけで、
- * 連打自体はコンボ数にカウントされないため、音符打数のみを対象にする。
- * 理論値(音符数)を超えないようにする。 */
-function analysisMaxComboValue(b: SlotRollBreakdown, mode: BorderMode, multiplier: number): number {
-  if (mode === 'red') return b.donKatsu
-  return Math.min(Math.round(b.donKatsu * multiplier), b.donKatsu)
-}
-
-function analysisValuesForStatKind(
+function analysisBordersForStatKind(
   label: string,
   slots: SongSlot[],
   rollSpeed: number,
-  comp: ShortRollComp,
-  mode: BorderMode
-): number[] {
-  const multiplier = GOLD_AUTOFILL_MULTIPLIER[label] ?? 1
-  return slots.map((s) => {
-    const breakdown = slotRollBreakdown(s, rollSpeed, comp)
-    if (label === 'Roll') return analysisRollValue(breakdown, mode, multiplier)
-    if (label === 'MaxCombo') return analysisMaxComboValue(breakdown, mode, multiplier)
-    return analysisHitCountValue(breakdown, mode, multiplier)
-  })
+  comp: ShortRollComp
+): AnalysisBorder[] {
+  return slots.map((s) => analysisBorderFor(label, slotRollBreakdown(s, rollSpeed, comp)))
 }
 
 interface SetEditorScreenProps {
@@ -148,7 +105,7 @@ function emptyRank(rankIndex: number, rankName: string): Rank {
     id: crypto.randomUUID(),
     rankIndex,
     rankName,
-    title: '',
+    title: rankName,
     gauge: { red: 100, gold: 100 },
     statKinds: [],
     songSlots: Array.from({ length: FIXED_SONG_COUNT }, () => ({
@@ -197,7 +154,6 @@ function SetEditorScreen({ setId, onBack }: SetEditorScreenProps): JSX.Element {
   const [saving, setSaving] = useState(false)
   const [borderMode, setBorderMode] = useState<BorderMode>('red')
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false)
-  const [screenError, setScreenError] = useState<string | null>(null)
   const [validationReport, setValidationReport] = useState<ValidationReport | null>(null)
   const [exportConflict, setExportConflict] = useState<{
     conflict: ExportFolderConflict
@@ -395,16 +351,28 @@ function SetEditorScreen({ setId, onBack }: SetEditorScreenProps): JSX.Element {
     }))
   }
 
-  const handleApplyAnalysisValue = (index: number, mode: BorderMode): void => {
+  /** 解析値を金合格に入れ、赤合格はそこから逆算して同時に埋める。 */
+  const handleApplyAnalysisValue = (index: number): void => {
     if (!rank) return
     const stat = rank.statKinds[index]
     if (!stat) return
-    const values = analysisValuesForStatKind(stat.label, rank.songSlots, rollSpeed, shortRollComp, mode)
-    if (stat.continuous) {
-      updateCumulativeBorderValue(index, mode, Math.round(values.reduce((sum, v) => sum + v, 0)))
-    } else {
-      values.forEach((v, songIndex) => updatePerSongBorderValue(index, songIndex, mode, Math.round(v)))
-    }
+    const borders = analysisBordersForStatKind(stat.label, rank.songSlots, rollSpeed, shortRollComp)
+    updateRank((r) => ({
+      ...r,
+      statKinds: r.statKinds.map((s, i) => {
+        if (i !== index) return s
+        if (s.continuous) {
+          return {
+            ...s,
+            cumulativeBorder: {
+              red: borders.reduce((sum, b) => sum + b.red, 0),
+              gold: borders.reduce((sum, b) => sum + b.gold, 0)
+            }
+          }
+        }
+        return { ...s, perSongBorders: borders.map((b) => ({ red: b.red, gold: b.gold })) }
+      })
+    }))
   }
 
   const updateGaugeValue = (mode: BorderMode, value: number): void => {
@@ -447,7 +415,6 @@ function SetEditorScreen({ setId, onBack }: SetEditorScreenProps): JSX.Element {
   }
 
   const handlePickSongForSlot = async (slotId: string): Promise<void> => {
-    setScreenError(null)
     setPickingSlotId(slotId)
     try {
       const tjaPath = await window.api.dialogs.pickTjaFile()
@@ -461,7 +428,7 @@ function SetEditorScreen({ setId, onBack }: SetEditorScreenProps): JSX.Element {
         diff: highestAvailableCourseIndex(asset)
       })
     } catch (e) {
-      setScreenError(e instanceof Error ? e.message : String(e))
+      reportError('曲の読み込み', e)
     } finally {
       setPickingSlotId(null)
     }
@@ -489,9 +456,13 @@ function SetEditorScreen({ setId, onBack }: SetEditorScreenProps): JSX.Element {
     onBack()
   }
 
+  const reportExportDone = (report: { ranksExported: number; folderPath?: string }): void => {
+    const where = report.folderPath ? `\n${report.folderPath}` : ''
+    window.alert(`エクスポート完了: ${report.ranksExported}段位を書き出しました${where}`)
+  }
+
   const handleExportFolder = async (): Promise<void> => {
     if (!set) return
-    setScreenError(null)
     try {
       if (isDirty) await handleSave()
       const report = await window.api.sets.validate(set.id)
@@ -508,9 +479,9 @@ function SetEditorScreen({ setId, onBack }: SetEditorScreenProps): JSX.Element {
         return
       }
       const exportReport = await window.api.sets.exportToFolder(set.id, destDir)
-      window.alert(`エクスポート完了: ${exportReport.ranksExported}段位を書き出しました`)
+      reportExportDone(exportReport)
     } catch (e) {
-      setScreenError(e instanceof Error ? e.message : String(e))
+      reportError('フォルダ出力', e)
     }
   }
 
@@ -524,9 +495,9 @@ function SetEditorScreen({ setId, onBack }: SetEditorScreenProps): JSX.Element {
         destDir,
         mode === 'overwrite' ? conflict.folderName : undefined
       )
-      window.alert(`エクスポート完了: ${exportReport.ranksExported}段位を書き出しました`)
+      reportExportDone(exportReport)
     } catch (e) {
-      setScreenError(e instanceof Error ? e.message : String(e))
+      reportError('フォルダ出力', e)
     }
   }
 
@@ -541,8 +512,6 @@ function SetEditorScreen({ setId, onBack }: SetEditorScreenProps): JSX.Element {
         </button>
         <button onClick={handleExportFolder}>フォルダ出力</button>
       </div>
-
-      {screenError && <p className="error">{screenError}</p>}
 
       {showLeaveConfirm && (
         <ConfirmDialog
@@ -592,13 +561,7 @@ function SetEditorScreen({ setId, onBack }: SetEditorScreenProps): JSX.Element {
         </div>
       ) : (
         <>
-          <input
-            className="rank-title-pill"
-            type="text"
-            placeholder="この段位のタイトル"
-            value={rank.title}
-            onChange={(e) => updateRank((r) => ({ ...r, title: e.target.value }))}
-          />
+          <div className="rank-title-pill">{rank.rankName}</div>
 
           <div className="rank-editor-main">
             <div className="song-list-panel">
@@ -785,14 +748,14 @@ function SetEditorScreen({ setId, onBack }: SetEditorScreenProps): JSX.Element {
               {rank.statKinds.some((s) => ANALYZABLE_STAT_LABELS.has(s.label)) && (
                 <div className="analysis-apply-panel">
                   <div className="rank-analysis-total-title">解析値を反映</div>
+                  <div className="analysis-apply-hint">金合格に解析値を入れ、赤合格は逆算して同時に埋めます</div>
                   {rank.statKinds.map((stat, i) => {
                     if (!ANALYZABLE_STAT_LABELS.has(stat.label)) return null
                     const preset = STAT_KIND_PRESETS.find((p) => p.key === stat.label)
                     return (
                       <div key={i} className="analysis-apply-row">
                         <span className="board-label-pill">{preset?.label ?? stat.label}</span>
-                        <button onClick={() => handleApplyAnalysisValue(i, 'red')}>赤に反映</button>
-                        <button onClick={() => handleApplyAnalysisValue(i, 'gold')}>金に反映</button>
+                        <button onClick={() => handleApplyAnalysisValue(i)}>金・赤に反映</button>
                       </div>
                     )
                   })}

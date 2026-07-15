@@ -1,6 +1,7 @@
 export const IPC_CHANNELS = {
   ping: 'app:ping',
   appSetDirty: 'app:setDirty',
+  appReportError: 'app:reportError',
   settingsGet: 'settings:get',
   settingsUpdate: 'settings:update',
   songAssetsAssign: 'songAssets:assign',

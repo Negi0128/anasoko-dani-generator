@@ -5,6 +5,7 @@ import type { ExportFolderConflict } from '../../../shared/types/exportConflict'
 import ExportValidationModal from '../components/ExportValidationModal'
 import ExportOverwriteModal from '../components/ExportOverwriteModal'
 import PromptDialog from '../components/PromptDialog'
+import { reportError } from '../errorReporting'
 
 interface SetLibraryScreenProps {
   onOpenSet: (setId: string) => void
@@ -13,7 +14,6 @@ interface SetLibraryScreenProps {
 function SetLibraryScreen({ onOpenSet }: SetLibraryScreenProps): JSX.Element {
   const [sets, setSets] = useState<DaniSetSummary[]>([])
   const [newTitle, setNewTitle] = useState('')
-  const [exportError, setExportError] = useState<string | null>(null)
   const [validationReport, setValidationReport] = useState<ValidationReport | null>(null)
   const [duplicateTarget, setDuplicateTarget] = useState<{ id: string; currentTitle: string } | null>(null)
   const [exportConflict, setExportConflict] = useState<{
@@ -57,8 +57,12 @@ function SetLibraryScreen({ onOpenSet }: SetLibraryScreenProps): JSX.Element {
     refresh()
   }
 
+  const reportExportDone = (report: { ranksExported: number; folderPath?: string }): void => {
+    const where = report.folderPath ? `\n${report.folderPath}` : ''
+    window.alert(`エクスポート完了: ${report.ranksExported}段位を書き出しました${where}`)
+  }
+
   const handleExportFolder = async (id: string): Promise<void> => {
-    setExportError(null)
     try {
       const report = await window.api.sets.validate(id)
       if (!report.isValid) {
@@ -74,9 +78,9 @@ function SetLibraryScreen({ onOpenSet }: SetLibraryScreenProps): JSX.Element {
         return
       }
       const exportReport = await window.api.sets.exportToFolder(id, destDir)
-      window.alert(`エクスポート完了: ${exportReport.ranksExported}段位を書き出しました`)
+      reportExportDone(exportReport)
     } catch (e) {
-      setExportError(e instanceof Error ? e.message : String(e))
+      reportError('フォルダ出力', e)
     }
   }
 
@@ -90,14 +94,13 @@ function SetLibraryScreen({ onOpenSet }: SetLibraryScreenProps): JSX.Element {
         destDir,
         mode === 'overwrite' ? conflict.folderName : undefined
       )
-      window.alert(`エクスポート完了: ${exportReport.ranksExported}段位を書き出しました`)
+      reportExportDone(exportReport)
     } catch (e) {
-      setExportError(e instanceof Error ? e.message : String(e))
+      reportError('フォルダ出力', e)
     }
   }
 
   const handleExportZip = async (id: string, title: string): Promise<void> => {
-    setExportError(null)
     try {
       const report = await window.api.sets.validate(id)
       if (!report.isValid) {
@@ -107,9 +110,9 @@ function SetLibraryScreen({ onOpenSet }: SetLibraryScreenProps): JSX.Element {
       const destZip = await window.api.dialogs.pickSaveZip(title)
       if (!destZip) return
       const exportReport = await window.api.sets.exportToZip(id, destZip)
-      window.alert(`エクスポート完了: ${exportReport.ranksExported}段位を書き出しました`)
+      reportExportDone(exportReport)
     } catch (e) {
-      setExportError(e instanceof Error ? e.message : String(e))
+      reportError('ZIP出力', e)
     }
   }
 
@@ -129,7 +132,6 @@ function SetLibraryScreen({ onOpenSet }: SetLibraryScreenProps): JSX.Element {
   }
 
   const handleImportFolder = async (): Promise<void> => {
-    setExportError(null)
     try {
       const sourceDir = await window.api.dialogs.pickImportFolder()
       if (!sourceDir) return
@@ -137,12 +139,11 @@ function SetLibraryScreen({ onOpenSet }: SetLibraryScreenProps): JSX.Element {
       refresh()
       reportImportResult(report)
     } catch (e) {
-      setExportError(e instanceof Error ? e.message : String(e))
+      reportError('フォルダから読み込み', e)
     }
   }
 
   const handleImportZip = async (): Promise<void> => {
-    setExportError(null)
     try {
       const sourceZip = await window.api.dialogs.pickImportZip()
       if (!sourceZip) return
@@ -150,7 +151,7 @@ function SetLibraryScreen({ onOpenSet }: SetLibraryScreenProps): JSX.Element {
       refresh()
       reportImportResult(report)
     } catch (e) {
-      setExportError(e instanceof Error ? e.message : String(e))
+      reportError('ZIPから読み込み', e)
     }
   }
 
@@ -195,7 +196,6 @@ function SetLibraryScreen({ onOpenSet }: SetLibraryScreenProps): JSX.Element {
         />
       )}
 
-      {exportError && <p className="error">{exportError}</p>}
 
       <div className="set-grid">
         {sets.map((set) => (

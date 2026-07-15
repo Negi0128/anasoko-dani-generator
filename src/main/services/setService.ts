@@ -6,6 +6,7 @@ interface DaniSetRow {
   id: string
   title: string
   set_index: number
+  last_export_path: string | null
 }
 
 interface RankRow {
@@ -61,7 +62,7 @@ export function createSet(db: Database.Database, input: { title: string; index: 
   db.prepare(
     `INSERT INTO dani_sets (id, title, set_index, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`
   ).run(id, input.title, input.index, now, now)
-  return { id, title: input.title, index: input.index, ranks: [] }
+  return { id, title: input.title, index: input.index, lastExportPath: null, ranks: [] }
 }
 
 export function loadSet(db: Database.Database, id: string): DaniSet | null {
@@ -117,14 +118,28 @@ export function loadSet(db: Database.Database, id: string): DaniSet | null {
       id: rankRow.id,
       rankIndex: rankRow.rank_index,
       rankName: rankRow.rank_name,
-      title: rankRow.title,
+      // Derived, never read from its own column: the title must always match
+      // the rank panel, including for rows written before that rule existed.
+      title: rankRow.rank_name,
       gauge: { red: rankRow.gauge_red, gold: rankRow.gauge_gold },
       statKinds,
       songSlots
     }
   })
 
-  return { id: setRow.id, title: setRow.title, index: setRow.set_index, ranks }
+  return {
+    id: setRow.id,
+    title: setRow.title,
+    index: setRow.set_index,
+    lastExportPath: setRow.last_export_path,
+    ranks
+  }
+}
+
+/** Remembers where this set was last exported so the next export can overwrite
+ * that same folder instead of creating another numbered one. */
+export function setLastExportPath(db: Database.Database, setId: string, path: string): void {
+  db.prepare('UPDATE dani_sets SET last_export_path = ? WHERE id = ?').run(path, setId)
 }
 
 /** Full-tree replace: simplest correct way to persist edits made client-side on the whole DaniSet object. */
@@ -163,7 +178,7 @@ export function saveSet(db: Database.Database, set: DaniSet): void {
         sortOrder: rankOrder,
         rankIndex: rank.rankIndex,
         rankName: rank.rankName,
-        title: rank.title,
+        title: rank.rankName,
         gaugeRed: rank.gauge.red,
         gaugeGold: rank.gauge.gold
       })

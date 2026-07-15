@@ -5,6 +5,7 @@ import type Database from 'better-sqlite3'
 import yazl from 'yazl'
 import type { DaniSet, Rank } from '../../shared/types/daniSet'
 import type { ExportedRankSummary, ExportFolderConflict } from '../../shared/types/exportConflict'
+import type { ExportReport } from '../../shared/types/exportReport'
 import type { ValidationReport } from '../../shared/types/validationReport'
 import { writeDaniDef } from './daniDefCodec'
 import {
@@ -14,11 +15,9 @@ import {
   toInternalRank,
   writeDaniJson
 } from './daniJsonCodec'
-import { loadSet } from './setService'
+import { loadSet, setLastExportPath } from './setService'
 
-export interface ExportReport {
-  ranksExported: number
-}
+export type { ExportReport } from '../../shared/types/exportReport'
 
 interface PlannedFile {
   relativePath: string
@@ -112,6 +111,16 @@ function summarizeExportedFolder(setRoot: string): ExportedRankSummary[] {
   return summaries.sort((a, b) => a.rankIndex - b.rankIndex)
 }
 
+/** The folder this set already owns under destDir, if any: the one it was last
+ * exported to. Only counts when it still exists and still sits directly under
+ * destDir, so changing the Dani folder setting starts a fresh export there. */
+function ownedExportFolderName(set: DaniSet, destDir: string): string | null {
+  if (!set.lastExportPath) return null
+  if (dirname(set.lastExportPath) !== destDir) return null
+  if (!existsSync(set.lastExportPath)) return null
+  return basename(set.lastExportPath)
+}
+
 export function checkExportFolderConflict(
   db: Database.Database,
   setId: string,
@@ -119,6 +128,9 @@ export function checkExportFolderConflict(
 ): ExportFolderConflict | null {
   const set = loadSet(db, setId)
   if (!set) throw new Error('指定されたセットが見つかりません')
+  // A folder this set exported itself is not a conflict — it gets overwritten
+  // silently so the play -> add rank -> re-export loop stays friction-free.
+  if (ownedExportFolderName(set, destDir)) return null
   const existingFolderName = findExistingSetFolderName(destDir, set.title)
   if (!existingFolderName) return null
   return {
@@ -197,10 +209,13 @@ export function exportSetToFolder(
   assertSetIsExportable(set)
 
   const plan = buildExportPlan(userDataDir, set)
-  const folderName = overwriteFolderName ?? numberedSetFolderName(destDir, set.title)
+  // Priority: an explicit overwrite the user confirmed > the folder this set
+  // already owns here (silent overwrite) > a fresh numbered folder.
+  const reusedFolderName = overwriteFolderName ?? ownedExportFolderName(set, destDir)
+  const folderName = reusedFolderName ?? numberedSetFolderName(destDir, set.title)
   const setRoot = join(destDir, folderName)
 
-  if (overwriteFolderName) {
+  if (reusedFolderName) {
     rmSync(setRoot, { recursive: true, force: true })
   }
 
@@ -214,7 +229,8 @@ export function exportSetToFolder(
     }
   }
 
-  return { ranksExported: set.ranks.length }
+  setLastExportPath(db, setId, setRoot)
+  return { ranksExported: set.ranks.length, folderPath: setRoot }
 }
 
 export function exportSetToZip(

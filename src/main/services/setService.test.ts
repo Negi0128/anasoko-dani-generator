@@ -18,7 +18,13 @@ describe('setService', () => {
   it('creates and loads an empty set', () => {
     const created = createSet(db, { title: '2025本家段位', index: 0 })
     const loaded = loadSet(db, created.id)
-    expect(loaded).toEqual({ id: created.id, title: '2025本家段位', index: 0, ranks: [] })
+    expect(loaded).toEqual({
+      id: created.id,
+      title: '2025本家段位',
+      index: 0,
+      lastExportPath: null,
+      ranks: []
+    })
   })
 
   it('lists sets ordered by index with rank counts', () => {
@@ -36,12 +42,13 @@ describe('setService', () => {
       id: created.id,
       title: 'Set',
       index: 0,
+      lastExportPath: null,
       ranks: [
         {
           id: 'rank-0',
           rankIndex: 0,
           rankName: '五級',
-          title: '',
+          title: '五級',
           gauge: { red: 98, gold: 100 },
           statKinds: [{ label: 'HitCount', continuous: true, cumulativeBorder: { red: 825, gold: 874 } }],
           songSlots: [
@@ -73,7 +80,7 @@ describe('setService', () => {
           id: 'rank-1',
           rankIndex: 12,
           rankName: '八段',
-          title: '',
+          title: '八段',
           gauge: { red: 100, gold: 100 },
           statKinds: [
             { label: 'Good', continuous: true, cumulativeBorder: { red: 100, gold: 100 } },
@@ -126,12 +133,13 @@ describe('setService', () => {
       id: created.id,
       title: 'Set',
       index: 0,
+      lastExportPath: null,
       ranks: [
         {
           id: 'rank-0',
           rankIndex: 0,
           rankName: '五級',
-          title: '',
+          title: '五級',
           gauge: { red: 98, gold: 100 },
           statKinds: [{ label: 'HitCount', continuous: true, cumulativeBorder: { red: 1, gold: 2 } }],
           songSlots: []
@@ -156,12 +164,13 @@ describe('setService', () => {
       id: created.id,
       title: 'Original',
       index: 0,
+      lastExportPath: null,
       ranks: [
         {
           id: 'rank-0',
           rankIndex: 0,
           rankName: '五級',
-          title: '',
+          title: '五級',
           gauge: { red: 98, gold: 100 },
           statKinds: [{ label: 'HitCount', continuous: true, cumulativeBorder: { red: 1, gold: 2 } }],
           songSlots: [

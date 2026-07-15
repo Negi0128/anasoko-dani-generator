@@ -5,11 +5,13 @@ import type { SongAssetResult, SongCourse } from '../shared/types/song'
 import type { ImportReport } from '../shared/types/importReport'
 import type { ValidationReport } from '../shared/types/validationReport'
 import type { ExportFolderConflict } from '../shared/types/exportConflict'
+import type { ExportReport } from '../shared/types/exportReport'
 
 interface Api {
   ping: () => Promise<string>
   app: {
     setDirty: (isDirty: boolean) => void
+    reportError: (context: string, message: string, detail: string) => void
   }
   settings: {
     get: () => Promise<AppSettings>
@@ -38,9 +40,9 @@ interface Api {
       id: string,
       destDir: string,
       overwriteFolderName?: string
-    ) => Promise<{ ranksExported: number }>
+    ) => Promise<ExportReport>
     checkExportFolderConflict: (id: string, destDir: string) => Promise<ExportFolderConflict | null>
-    exportToZip: (id: string, destZipPath: string) => Promise<{ ranksExported: number }>
+    exportToZip: (id: string, destZipPath: string) => Promise<ExportReport>
     importFromFolder: (sourceDir: string) => Promise<ImportReport>
     importFromZip: (sourceZipPath: string) => Promise<ImportReport>
     validate: (id: string) => Promise<ValidationReport>

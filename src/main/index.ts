@@ -6,7 +6,10 @@ const { autoUpdater } = electronUpdaterPkg
 import { IPC_CHANNELS } from '../shared/constants'
 import { ensureStorageDirs, getDbPath } from './services/paths'
 import { openDatabase } from './services/db'
+import { installGlobalErrorHandlers, reportError } from './services/errorReporter'
 import { registerIpc } from './ipc'
+
+installGlobalErrorHandlers()
 
 let hasUnsavedChanges = false
 
@@ -81,6 +84,11 @@ app.whenReady().then(() => {
   ipcMain.handle(IPC_CHANNELS.ping, () => 'pong')
   ipcMain.on(IPC_CHANNELS.appSetDirty, (_event, isDirty: boolean) => {
     hasUnsavedChanges = isDirty
+  })
+  // The renderer has already flattened the error to strings by this point, so
+  // rebuild just enough for the shared reporter to format it the same way.
+  ipcMain.on(IPC_CHANNELS.appReportError, (_event, context: string, message: string, detail: string) => {
+    reportError(context, detail ? `${message}\n\n${detail}` : message)
   })
 
   ensureStorageDirs()

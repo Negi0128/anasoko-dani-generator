@@ -24,8 +24,9 @@ export const STAT_KIND_PRESETS: readonly StatKindPreset[] = [
   { key: 'MaxCombo', label: 'コンボ数', defaultContinuous: false, comparisonSuffix: '以上' }
 ]
 
-/** Multiplier applied to the red value to seed the gold value the first time
- * a board's gold condition is viewed (while it's still at its default 0). */
+/** How much stricter gold is than red, per stat kind. Used in both directions:
+ * seeding gold from a hand-typed red (gold = red * multiplier), and
+ * back-calculating red from an analysis-derived gold (red = gold / multiplier). */
 export const GOLD_AUTOFILL_MULTIPLIER: Record<string, number> = {
   Great: 1.1,
   Roll: 1.1,
