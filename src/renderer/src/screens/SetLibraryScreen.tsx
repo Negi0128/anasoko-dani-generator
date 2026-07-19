@@ -6,6 +6,7 @@ import ExportValidationModal from '../components/ExportValidationModal'
 import ExportOverwriteModal from '../components/ExportOverwriteModal'
 import PromptDialog from '../components/PromptDialog'
 import { reportError } from '../errorReporting'
+import ConfirmDialog from '../components/ConfirmDialog'
 
 interface SetLibraryScreenProps {
   onOpenSet: (setId: string) => void
@@ -16,6 +17,10 @@ function SetLibraryScreen({ onOpenSet }: SetLibraryScreenProps): JSX.Element {
   const [newTitle, setNewTitle] = useState('')
   const [validationReport, setValidationReport] = useState<ValidationReport | null>(null)
   const [duplicateTarget, setDuplicateTarget] = useState<{ id: string; currentTitle: string } | null>(null)
+  // 削除確認・情報通知はアプリ内モーダルで行う（Electron の window.confirm / window.alert は
+  // 呼び出し後にレンダラのキーボードフォーカスが戻らず、以降テキスト入力できなくなる不具合があるため）
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null)
+  const [infoMessage, setInfoMessage] = useState<string | null>(null)
   const [exportConflict, setExportConflict] = useState<{
     id: string
     conflict: ExportFolderConflict
@@ -51,15 +56,22 @@ function SetLibraryScreen({ onOpenSet }: SetLibraryScreenProps): JSX.Element {
     refresh()
   }
 
-  const handleDelete = async (id: string, title: string): Promise<void> => {
-    if (!window.confirm(`「${title}」を削除しますか?`)) return
+  const handleDelete = (id: string, title: string): void => {
+    setDeleteTarget({ id, title })
+  }
+
+  const handleDeleteConfirm = async (): Promise<void> => {
+    if (!deleteTarget) return
+    const { id } = deleteTarget
+    setDeleteTarget(null)
     await window.api.sets.remove(id)
     refresh()
   }
 
+  // window.alert は Electron でキーボードフォーカスを奪ったままになるため、アプリ内ダイアログで通知する
   const reportExportDone = (report: { ranksExported: number; folderPath?: string }): void => {
     const where = report.folderPath ? `\n${report.folderPath}` : ''
-    window.alert(`エクスポート完了: ${report.ranksExported}段位を書き出しました${where}`)
+    setInfoMessage(`エクスポート完了: ${report.ranksExported}段位を書き出しました${where}`)
   }
 
   const handleExportFolder = async (id: string): Promise<void> => {
@@ -128,7 +140,7 @@ function SetLibraryScreen({ onOpenSet }: SetLibraryScreenProps): JSX.Element {
     if (report.warnings.length > 0) {
       lines.push('', '警告:', ...report.warnings)
     }
-    window.alert(lines.join('\n'))
+    setInfoMessage(lines.join('\n'))
   }
 
   const handleImportFolder = async (): Promise<void> => {
@@ -196,6 +208,26 @@ function SetLibraryScreen({ onOpenSet }: SetLibraryScreenProps): JSX.Element {
         />
       )}
 
+      {deleteTarget && (
+        <ConfirmDialog
+          title="セットの削除"
+          message={`「${deleteTarget.title}」を削除しますか?`}
+          confirmLabel="削除"
+          onConfirm={handleDeleteConfirm}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      )}
+
+      {infoMessage && (
+        <ConfirmDialog
+          title="お知らせ"
+          message={infoMessage}
+          confirmLabel="OK"
+          cancelLabel="閉じる"
+          onConfirm={() => setInfoMessage(null)}
+          onCancel={() => setInfoMessage(null)}
+        />
+      )}
 
       <div className="set-grid">
         {sets.map((set) => (

@@ -8,6 +8,7 @@ import type { ImportReport } from '../shared/types/importReport'
 import type { ValidationReport } from '../shared/types/validationReport'
 import type { ExportFolderConflict } from '../shared/types/exportConflict'
 import type { ExportReport } from '../shared/types/exportReport'
+import type { CreatePackParamsInput, CreatePackResult } from '../shared/types/pack'
 
 const api = {
   ping: (): Promise<string> => ipcRenderer.invoke(IPC_CHANNELS.ping),
@@ -38,7 +39,11 @@ const api = {
     pickImportZip: (): Promise<string | null> =>
       ipcRenderer.invoke(IPC_CHANNELS.dialogsPickImportZip),
     pickFolder: (title: string): Promise<string | null> =>
-      ipcRenderer.invoke(IPC_CHANNELS.dialogsPickFolder, title)
+      ipcRenderer.invoke(IPC_CHANNELS.dialogsPickFolder, title),
+    pickSaveAnskpack: (defaultName: string): Promise<string | null> =>
+      ipcRenderer.invoke(IPC_CHANNELS.dialogsPickSaveAnskpack, defaultName),
+    pickFolders: (title: string): Promise<string[] | null> =>
+      ipcRenderer.invoke(IPC_CHANNELS.dialogsPickFolders, title)
   },
   sets: {
     list: (): Promise<DaniSetSummary[]> => ipcRenderer.invoke(IPC_CHANNELS.setsList),
@@ -65,6 +70,10 @@ const api = {
       ipcRenderer.invoke(IPC_CHANNELS.setsImportFromZip, sourceZipPath),
     validate: (id: string): Promise<ValidationReport> =>
       ipcRenderer.invoke(IPC_CHANNELS.setsValidate, id)
+  },
+  pack: {
+    create: (params: CreatePackParamsInput): Promise<CreatePackResult> =>
+      ipcRenderer.invoke(IPC_CHANNELS.packCreate, params)
   }
 }
 

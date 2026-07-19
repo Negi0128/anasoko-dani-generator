@@ -6,6 +6,7 @@ import type { ImportReport } from '../shared/types/importReport'
 import type { ValidationReport } from '../shared/types/validationReport'
 import type { ExportFolderConflict } from '../shared/types/exportConflict'
 import type { ExportReport } from '../shared/types/exportReport'
+import type { CreatePackParamsInput, CreatePackResult } from '../shared/types/pack'
 
 interface Api {
   ping: () => Promise<string>
@@ -28,6 +29,8 @@ interface Api {
     pickImportFolder: () => Promise<string | null>
     pickImportZip: () => Promise<string | null>
     pickFolder: (title: string) => Promise<string | null>
+    pickSaveAnskpack: (defaultName: string) => Promise<string | null>
+    pickFolders: (title: string) => Promise<string[] | null>
   }
   sets: {
     list: () => Promise<DaniSetSummary[]>
@@ -46,6 +49,9 @@ interface Api {
     importFromFolder: (sourceDir: string) => Promise<ImportReport>
     importFromZip: (sourceZipPath: string) => Promise<ImportReport>
     validate: (id: string) => Promise<ValidationReport>
+  }
+  pack: {
+    create: (params: CreatePackParamsInput) => Promise<CreatePackResult>
   }
 }
 

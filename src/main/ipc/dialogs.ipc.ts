@@ -64,4 +64,23 @@ export function registerDialogsIpc(): void {
     if (result.canceled || result.filePaths.length === 0) return null
     return result.filePaths[0]
   })
+
+  ipcMain.handle(IPC_CHANNELS.dialogsPickSaveAnskpack, async (_event, defaultName: string) => {
+    const result = await dialog.showSaveDialog({
+      title: '解禁パックの出力先を選択',
+      defaultPath: `${defaultName}.anskpack`,
+      filters: [{ name: 'Anasoko Pack', extensions: ['anskpack'] }]
+    })
+    if (result.canceled || !result.filePath) return null
+    return result.filePath
+  })
+
+  ipcMain.handle(IPC_CHANNELS.dialogsPickFolders, async (_event, title: string) => {
+    const result = await dialog.showOpenDialog({
+      title,
+      properties: ['openDirectory', 'multiSelections', 'createDirectory']
+    })
+    if (result.canceled || result.filePaths.length === 0) return null
+    return result.filePaths
+  })
 }

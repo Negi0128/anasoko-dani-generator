@@ -714,3 +714,123 @@ select.condition-preset-select {
   text-align: center;
   margin-top: 80px;
 }
+
+/* ---- App header ---- */
+
+.app-header-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+/* ---- Pack maker ---- */
+
+.pack-maker-modal {
+  width: 720px;
+  max-width: 90vw;
+}
+
+.pack-maker-basic-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.pack-maker-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.9em;
+  opacity: 0.9;
+}
+
+.pack-maker-field select,
+.pack-maker-field input[type='text'] {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.pack-maker-rules h4 {
+  margin: 0 0 10px;
+}
+
+.pack-maker-rule-row {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 14px;
+}
+
+.pack-maker-rule-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.pack-maker-rule-index {
+  font-weight: bold;
+  opacity: 0.85;
+}
+
+.pack-maker-rule-fields {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.pack-maker-rule-fields .pack-maker-field {
+  flex: 1 1 140px;
+  min-width: 140px;
+}
+
+.pack-maker-rule-fields .pack-maker-field-wide {
+  flex: 2 1 220px;
+}
+
+.pack-maker-reward-folders-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 0.9em;
+  opacity: 0.9;
+}
+
+.pack-maker-empty-hint {
+  opacity: 0.6;
+  font-size: 0.85em;
+  margin: 0;
+}
+
+.pack-maker-reward-list {
+  margin: 0;
+}
+
+.pack-maker-reward-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin-bottom: 6px;
+}
+
+.pack-maker-reward-path {
+  font-size: 0.85em;
+  overflow-wrap: anywhere;
+}
+
+.pack-maker-result {
+  margin-top: 16px;
+}
+
+.pack-maker-result-ok {
+  color: #7be08a;
+  font-weight: bold;
+}

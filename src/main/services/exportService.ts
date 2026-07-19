@@ -19,13 +19,13 @@ import { loadSet, setLastExportPath } from './setService'
 
 export type { ExportReport } from '../../shared/types/exportReport'
 
-interface PlannedFile {
+export interface PlannedFile {
   relativePath: string
   content?: Buffer
   absoluteSourcePath?: string
 }
 
-function sanitizeFilename(name: string): string {
+export function sanitizeFilename(name: string): string {
   const cleaned = name.replace(/[\\/:*?"<>|]/g, '_').trim()
   return cleaned.length > 0 ? cleaned : 'untitled'
 }
@@ -157,7 +157,7 @@ export function validateSet(set: DaniSet): ValidationReport {
   return { isValid: issues.length === 0, issues }
 }
 
-function assertSetIsExportable(set: DaniSet): void {
+export function assertSetIsExportable(set: DaniSet): void {
   const report = validateSet(set)
   if (!report.isValid) {
     const missing = report.issues.map((i) => `${i.rankIndex},${i.rankName} の${i.slotIndex + 1}曲目`)
@@ -165,7 +165,7 @@ function assertSetIsExportable(set: DaniSet): void {
   }
 }
 
-function buildExportPlan(userDataDir: string, set: DaniSet): PlannedFile[] {
+export function buildExportPlan(userDataDir: string, set: DaniSet): PlannedFile[] {
   const files: PlannedFile[] = [
     { relativePath: 'dani.def', content: writeDaniDef({ title: set.title, index: set.index }) }
   ]

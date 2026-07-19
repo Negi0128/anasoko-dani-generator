@@ -23,5 +23,8 @@ export const IPC_CHANNELS = {
   dialogsPickFolder: 'dialogs:pickFolder',
   setsImportFromFolder: 'sets:importFromFolder',
   setsImportFromZip: 'sets:importFromZip',
-  setsValidate: 'sets:validate'
+  setsValidate: 'sets:validate',
+  dialogsPickSaveAnskpack: 'dialogs:pickSaveAnskpack',
+  dialogsPickFolders: 'dialogs:pickFolders',
+  packCreate: 'pack:create'
 } as const

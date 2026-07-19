@@ -160,6 +160,11 @@ function SetEditorScreen({ setId, onBack }: SetEditorScreenProps): JSX.Element {
     destDir: string
   } | null>(null)
   const [showGaidenPrompt, setShowGaidenPrompt] = useState(false)
+  // 削除確認・完了通知はアプリ内モーダルで行う（Electron の window.confirm / window.alert は
+  // 呼び出し後にレンダラのキーボードフォーカスが戻らず、以降テキスト入力できなくなる不具合があるため）
+  const [removeRankConfirm, setRemoveRankConfirm] = useState(false)
+  const [clearConditionsConfirm, setClearConditionsConfirm] = useState(false)
+  const [infoMessage, setInfoMessage] = useState<string | null>(null)
   const [rollSpeed, setRollSpeed] = useState(DEFAULT_ROLL_SPEED)
   const [shortRollComp, setShortRollComp] = useState<ShortRollComp>(DEFAULT_SHORT_ROLL_COMP)
   const savedSnapshotRef = useRef<string | null>(null)
@@ -261,7 +266,12 @@ function SetEditorScreen({ setId, onBack }: SetEditorScreenProps): JSX.Element {
 
   const handleRemoveRank = (): void => {
     if (!set || !rank) return
-    if (!window.confirm(`「${rank.rankIndex},${rank.rankName}」を削除しますか?`)) return
+    setRemoveRankConfirm(true)
+  }
+
+  const handleRemoveRankConfirm = (): void => {
+    setRemoveRankConfirm(false)
+    if (!set) return
     const ranks = set.ranks.filter((_, i) => i !== currentIndex)
     setSet({ ...set, ranks })
     setCurrentIndex((i) => Math.max(0, Math.min(i, ranks.length - 1)))
@@ -295,7 +305,11 @@ function SetEditorScreen({ setId, onBack }: SetEditorScreenProps): JSX.Element {
   }
 
   const handleClearConditions = (): void => {
-    if (!window.confirm('この段位の条件をすべて削除しますか?')) return
+    setClearConditionsConfirm(true)
+  }
+
+  const handleClearConditionsConfirm = (): void => {
+    setClearConditionsConfirm(false)
     updateRank((r) => ({ ...r, statKinds: [] }))
   }
 
@@ -456,9 +470,10 @@ function SetEditorScreen({ setId, onBack }: SetEditorScreenProps): JSX.Element {
     onBack()
   }
 
+  // window.alert は Electron でキーボードフォーカスを奪ったままになるため、アプリ内ダイアログで通知する
   const reportExportDone = (report: { ranksExported: number; folderPath?: string }): void => {
     const where = report.folderPath ? `\n${report.folderPath}` : ''
-    window.alert(`エクスポート完了: ${report.ranksExported}段位を書き出しました${where}`)
+    setInfoMessage(`エクスポート完了: ${report.ranksExported}段位を書き出しました${where}`)
   }
 
   const handleExportFolder = async (): Promise<void> => {
@@ -523,6 +538,37 @@ function SetEditorScreen({ setId, onBack }: SetEditorScreenProps): JSX.Element {
             onBack()
           }}
           onCancel={() => setShowLeaveConfirm(false)}
+        />
+      )}
+
+      {removeRankConfirm && rank && (
+        <ConfirmDialog
+          title="段位の削除"
+          message={`「${rank.rankIndex},${rank.rankName}」を削除しますか?`}
+          confirmLabel="削除"
+          onConfirm={handleRemoveRankConfirm}
+          onCancel={() => setRemoveRankConfirm(false)}
+        />
+      )}
+
+      {clearConditionsConfirm && (
+        <ConfirmDialog
+          title="条件のクリア"
+          message="この段位の条件をすべて削除しますか?"
+          confirmLabel="削除"
+          onConfirm={handleClearConditionsConfirm}
+          onCancel={() => setClearConditionsConfirm(false)}
+        />
+      )}
+
+      {infoMessage && (
+        <ConfirmDialog
+          title="お知らせ"
+          message={infoMessage}
+          confirmLabel="OK"
+          cancelLabel="閉じる"
+          onConfirm={() => setInfoMessage(null)}
+          onCancel={() => setInfoMessage(null)}
         />
       )}
 
